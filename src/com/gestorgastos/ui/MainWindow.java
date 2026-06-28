@@ -30,9 +30,10 @@ public class MainWindow extends JFrame {
     private JTextField incomeField;
     
     
-    private JComboBox<String> periodFilterCombo;
+    private JMenu periodFilterMenu;
     private int selectedMonth = 0; 
     private int selectedYear = 0;  
+    private JLabel currentPeriodLabel; 
     
     private MetricCard incomeMetricCard;
     private MetricCard expensesMetricCard;
@@ -124,6 +125,7 @@ public class MainWindow extends JFrame {
 
         
         JMenu fileMenu = createStyledMenu("Arquivo");
+        periodFilterMenu = createStyledMenu("Histórico de Meses");
         JMenu helpMenu = createStyledMenu("Ajuda");
 
         
@@ -138,8 +140,75 @@ public class MainWindow extends JFrame {
         helpMenu.add(aboutItem);
 
         menuBar.add(fileMenu);
+        menuBar.add(periodFilterMenu);
         menuBar.add(helpMenu);
         setJMenuBar(menuBar);
+
+        
+        LocalDate now = LocalDate.now();
+        selectedMonth = now.getMonthValue();
+        selectedYear = now.getYear();
+        
+        populatePeriodFilterMenu();
+    }
+
+    private void populatePeriodFilterMenu() {
+        if (periodFilterMenu == null) return;
+        periodFilterMenu.removeAll();
+
+        
+        JMenuItem allMonthsItem = createStyledMenuItem("Todos os meses");
+        allMonthsItem.addActionListener(e -> {
+            selectedMonth = 0;
+            selectedYear = 0;
+            updateUI();
+        });
+        periodFilterMenu.add(allMonthsItem);
+
+        Set<String> periods = new HashSet<>();
+        for (Expense expense : budgetManager.getExpenses()) {
+            LocalDate date = expense.getDate();
+            String period = String.format("%02d/%d", date.getMonthValue(), date.getYear());
+            periods.add(period);
+        }
+
+        LocalDate now = LocalDate.now();
+        String currentPeriod = String.format("%02d/%d", now.getMonthValue(), now.getYear());
+        periods.add(currentPeriod);
+
+        List<String> sortedPeriods = new ArrayList<>(periods);
+        Collections.sort(sortedPeriods, (p1, p2) -> {
+            try {
+                String[] parts1 = p1.split("/");
+                String[] parts2 = p2.split("/");
+                int m1 = Integer.parseInt(parts1[0]);
+                int y1 = Integer.parseInt(parts1[1]);
+                int m2 = Integer.parseInt(parts2[0]);
+                int y2 = Integer.parseInt(parts2[1]);
+                if (y1 != y2) {
+                    return Integer.compare(y2, y1);
+                }
+                return Integer.compare(m2, m1);
+            } catch (Exception e) {
+                return p1.compareTo(p2);
+            }
+        });
+
+        for (String period : sortedPeriods) {
+            JMenuItem periodItem = createStyledMenuItem(period);
+            periodItem.addActionListener(e -> {
+                try {
+                    String[] parts = period.split("/");
+                    selectedMonth = Integer.parseInt(parts[0]);
+                    selectedYear = Integer.parseInt(parts[1]);
+                } catch (Exception ex) {
+                    selectedMonth = 0;
+                    selectedYear = 0;
+                }
+                updateUI();
+            });
+            periodFilterMenu.add(periodItem);
+        }
     }
 
     private JMenu createStyledMenu(String text) {
@@ -254,41 +323,11 @@ public class MainWindow extends JFrame {
         JPanel filterRowPanel = new JPanel(new BorderLayout(10, 0));
         filterRowPanel.setOpaque(false);
 
-        JLabel selectMonthLabel = new JLabel("Histórico Mensal / Filtro por Período:");
-        selectMonthLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        selectMonthLabel.setForeground(COLOR_TEXT_PRIMARY);
+        currentPeriodLabel = new JLabel("Período Ativo: Todos os meses");
+        currentPeriodLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        currentPeriodLabel.setForeground(COLOR_PRIMARY);
 
-        periodFilterCombo = new JComboBox<>();
-        periodFilterCombo.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        periodFilterCombo.setPreferredSize(new Dimension(180, 32));
-        periodFilterCombo.setBackground(COLOR_CARD_BG);
-        populatePeriodFilter();
-        
-        periodFilterCombo.addActionListener(e -> {
-            String selected = (String) periodFilterCombo.getSelectedItem();
-            if (selected == null || selected.equals("Todos os meses")) {
-                selectedMonth = 0;
-                selectedYear = 0;
-            } else {
-                try {
-                    String[] parts = selected.split("/");
-                    selectedMonth = Integer.parseInt(parts[0]);
-                    selectedYear = Integer.parseInt(parts[1]);
-                } catch (Exception ex) {
-                    selectedMonth = 0;
-                    selectedYear = 0;
-                }
-            }
-            updateUI();
-        });
-
-        JPanel rightSelectorPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        rightSelectorPanel.setOpaque(false);
-        rightSelectorPanel.add(selectMonthLabel);
-        rightSelectorPanel.add(Box.createRigidArea(new Dimension(10, 0)));
-        rightSelectorPanel.add(periodFilterCombo);
-
-        filterRowPanel.add(rightSelectorPanel, BorderLayout.EAST);
+        filterRowPanel.add(currentPeriodLabel, BorderLayout.WEST);
         container.add(filterRowPanel, BorderLayout.NORTH);
 
         
@@ -335,58 +374,10 @@ public class MainWindow extends JFrame {
         cardsPanel.add(expensesMetricCard);
         cardsPanel.add(remainingMetricCard);
 
+        cardsPanel.setPreferredSize(new Dimension(0, 100));
+
         container.add(cardsPanel, BorderLayout.CENTER);
         return container;
-    }
-
-    private void populatePeriodFilter() {
-        if (periodFilterCombo == null) return;
-        
-        String previousSelection = (String) periodFilterCombo.getSelectedItem();
-        periodFilterCombo.removeAllItems();
-        periodFilterCombo.addItem("Todos os meses");
-
-        Set<String> periods = new HashSet<>();
-        
-        for (Expense expense : budgetManager.getExpenses()) {
-            LocalDate date = expense.getDate();
-            String period = String.format("%02d/%d", date.getMonthValue(), date.getYear());
-            periods.add(period);
-        }
-
-        
-        LocalDate now = LocalDate.now();
-        String currentPeriod = String.format("%02d/%d", now.getMonthValue(), now.getYear());
-        periods.add(currentPeriod);
-
-        List<String> sortedPeriods = new ArrayList<>(periods);
-        Collections.sort(sortedPeriods, (p1, p2) -> {
-            try {
-                String[] parts1 = p1.split("/");
-                String[] parts2 = p2.split("/");
-                int m1 = Integer.parseInt(parts1[0]);
-                int y1 = Integer.parseInt(parts1[1]);
-                int m2 = Integer.parseInt(parts2[0]);
-                int y2 = Integer.parseInt(parts2[1]);
-                if (y1 != y2) {
-                    return Integer.compare(y2, y1); 
-                }
-                return Integer.compare(m2, m1); 
-            } catch (Exception e) {
-                return p1.compareTo(p2);
-            }
-        });
-
-        for (String period : sortedPeriods) {
-            periodFilterCombo.addItem(period);
-        }
-
-        if (previousSelection != null) {
-            periodFilterCombo.setSelectedItem(previousSelection);
-        } else {
-            
-            periodFilterCombo.setSelectedItem(currentPeriod);
-        }
     }
 
     private JPanel createCenterPanel() {
@@ -661,11 +652,8 @@ public class MainWindow extends JFrame {
                 budgetManager.addExpense(expense);
                 
                 
-                populatePeriodFilter();
+                populatePeriodFilterMenu();
                 
-                
-                String newPeriod = String.format("%02d/%d", date.getMonthValue(), date.getYear());
-                periodFilterCombo.setSelectedItem(newPeriod);
                 selectedMonth = date.getMonthValue();
                 selectedYear = date.getYear();
 
@@ -708,7 +696,7 @@ public class MainWindow extends JFrame {
             budgetManager.removeExpense(expense);
             
             
-            populatePeriodFilter();
+            populatePeriodFilterMenu();
             
             updateUI();
             dataManager.saveData(budgetManager);
@@ -719,6 +707,14 @@ public class MainWindow extends JFrame {
         double monthlyIncome = budgetManager.getMonthlyIncome();
         if (monthlyIncome > 0 && incomeField != null) {
             incomeField.setText(String.format("%.2f", monthlyIncome));
+        }
+
+        if (currentPeriodLabel != null) {
+            if (selectedMonth == 0 && selectedYear == 0) {
+                currentPeriodLabel.setText("Período Ativo: Todos os meses");
+            } else {
+                currentPeriodLabel.setText(String.format("Período Ativo: %02d/%d", selectedMonth, selectedYear));
+            }
         }
         
         if (incomeMetricCard != null) {
