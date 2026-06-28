@@ -2,7 +2,7 @@ package com.gestorgastos.model;
 
 public enum Category {
     GASTOS_FIXOS("Gastos Fixos", 50),
-    GASTOS_NAO_ESSENCIAIS("Gastos Não Essenciais", 30),
+    GASTOS_NAO_ESSENCIAIS("Gastos Nao Essenciais", 30),
     INVESTIMENTO("Investimento", 20);
 
     private final String displayName;

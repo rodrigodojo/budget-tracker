@@ -47,7 +47,7 @@ public class MainWindow extends JFrame {
 
     private JPanel createTopPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createTitledBorder("Configuração de Renda"));
+        panel.setBorder(BorderFactory.createTitledBorder("Configuracao de Renda"));
 
         JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         inputPanel.add(new JLabel("Renda Mensal (R$):"));
@@ -152,7 +152,7 @@ public class MainWindow extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Gastos Registrados"));
 
-        String[] columnNames = {"Descrição", "Valor (R$)", "Categoria", "Data"};
+        String[] columnNames = {"Descricao", "Valor (R$)", "Categoria", "Data"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -175,15 +175,19 @@ public class MainWindow extends JFrame {
         JButton addExpenseButton = new JButton("Adicionar Gasto");
         addExpenseButton.setFont(new Font("Arial", Font.BOLD, 14));
         addExpenseButton.setBackground(new Color(100, 200, 100));
-        addExpenseButton.setForeground(Color.WHITE);
+        addExpenseButton.setForeground(Color.BLACK);
         addExpenseButton.setFocusPainted(false);
+        addExpenseButton.setOpaque(true);
+        addExpenseButton.setBorderPainted(false);
         addExpenseButton.addActionListener(e -> showAddExpenseDialog());
 
         JButton removeExpenseButton = new JButton("Remover Gasto");
         removeExpenseButton.setFont(new Font("Arial", Font.BOLD, 14));
         removeExpenseButton.setBackground(new Color(200, 100, 100));
-        removeExpenseButton.setForeground(Color.WHITE);
+        removeExpenseButton.setForeground(Color.BLACK);
         removeExpenseButton.setFocusPainted(false);
+        removeExpenseButton.setOpaque(true);
+        removeExpenseButton.setBorderPainted(false);
         removeExpenseButton.addActionListener(e -> removeSelectedExpense());
 
         panel.add(addExpenseButton);
@@ -202,7 +206,7 @@ public class MainWindow extends JFrame {
             budgetManager.setMonthlyIncome(income);
             updateUI();
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Por favor, insira um valor válido!", "Erro", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Por favor, insira um valor valido!", "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -222,7 +226,7 @@ public class MainWindow extends JFrame {
         JComboBox<Category> categoryCombo = new JComboBox<>(Category.values());
         JTextField dateField = new JTextField(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
 
-        dialog.add(new JLabel("Descrição:"));
+        dialog.add(new JLabel("Descricao:"));
         dialog.add(descriptionField);
         dialog.add(new JLabel("Valor (R$):"));
         dialog.add(amountField);
@@ -238,7 +242,7 @@ public class MainWindow extends JFrame {
             try {
                 String description = descriptionField.getText().trim();
                 if (description.isEmpty()) {
-                    JOptionPane.showMessageDialog(dialog, "Descrição não pode ser vazia!", "Erro", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(dialog, "Descricao nao pode ser vazia!", "Erro", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
@@ -256,9 +260,9 @@ public class MainWindow extends JFrame {
                 updateUI();
                 dialog.dispose();
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(dialog, "Valor inválido!", "Erro", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Valor invalido!", "Erro", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Data inválida! Use o formato AAAA-MM-DD", "Erro", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Data invalida! Use o formato AAAA-MM-DD", "Erro", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -277,7 +281,7 @@ public class MainWindow extends JFrame {
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(this, "Tem certeza que deseja remover este gasto?", "Confirmação", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Tem certeza que deseja remover este gasto?", "Confirmacao", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             Expense expense = budgetManager.getExpenses().get(selectedRow);
             budgetManager.removeExpense(expense);
