@@ -27,6 +27,10 @@ Aplicação Java para gerenciar seus gastos mensais seguindo a regra 50/30/20:
    - Verde: Dentro do orçamento
    - Laranja: Próximo do limite (>80%)
    - Vermelho: Acima do orçamento
+5. **Persistência de Dados**: Seus dados são salvos automaticamente e recuperados ao reabrir a aplicação
+   - Os dados são salvos no arquivo `gestor_gastos_data.txt`
+   - Salvamento automático ao definir renda, adicionar ou remover gastos
+   - Carregamento automático ao iniciar a aplicação
 
 ### Categorias
 - **Gastos Fixos (50%)**: Despesas essenciais e recorrentes
@@ -42,10 +46,13 @@ GestorGastos/
 │       │   ├── Category.java
 │       │   ├── Expense.java
 │       │   └── BudgetManager.java
+│       ├── persistence/
+│       │   └── DataManager.java
 │       └── ui/
 │           └── MainWindow.java
 ├── bin/
 ├── GestorGastos.jar
+├── gestor_gastos_data.txt (gerado automaticamente)
 └── README.md
 ```
 
