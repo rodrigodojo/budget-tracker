@@ -1,5 +1,6 @@
 package com.gestorgastos.model;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,9 +34,27 @@ public class BudgetManager {
         return new ArrayList<>(expenses);
     }
 
+    public List<Expense> getExpensesByMonth(int month, int year) {
+        return expenses.stream()
+            .filter(e -> e.getDate().getMonthValue() == month && e.getDate().getYear() == year)
+            .collect(Collectors.toList());
+    }
+
     public double getTotalByCategory(Category category) {
         return expenses.stream()
             .filter(e -> e.getCategory() == category)
+            .mapToDouble(Expense::getAmount)
+            .sum();
+    }
+
+    public double getTotalByCategory(Category category, int month, int year) {
+        if (month == 0 && year == 0) {
+            return getTotalByCategory(category);
+        }
+        return expenses.stream()
+            .filter(e -> e.getCategory() == category 
+                      && e.getDate().getMonthValue() == month 
+                      && e.getDate().getYear() == year)
             .mapToDouble(Expense::getAmount)
             .sum();
     }
@@ -48,8 +67,22 @@ public class BudgetManager {
         return getRecommendedAmount(category) - getTotalByCategory(category);
     }
 
+    public double getRemainingAmount(Category category, int month, int year) {
+        return getRecommendedAmount(category) - getTotalByCategory(category, month, year);
+    }
+
     public double getTotalExpenses() {
         return expenses.stream()
+            .mapToDouble(Expense::getAmount)
+            .sum();
+    }
+
+    public double getTotalExpenses(int month, int year) {
+        if (month == 0 && year == 0) {
+            return getTotalExpenses();
+        }
+        return expenses.stream()
+            .filter(e -> e.getDate().getMonthValue() == month && e.getDate().getYear() == year)
             .mapToDouble(Expense::getAmount)
             .sum();
     }
@@ -58,13 +91,27 @@ public class BudgetManager {
         return monthlyIncome - getTotalExpenses();
     }
 
+    public double getTotalRemaining(int month, int year) {
+        return monthlyIncome - getTotalExpenses(month, year);
+    }
+
     public boolean isOverBudget(Category category) {
         return getTotalByCategory(category) > getRecommendedAmount(category);
+    }
+
+    public boolean isOverBudget(Category category, int month, int year) {
+        return getTotalByCategory(category, month, year) > getRecommendedAmount(category);
     }
 
     public double getUsagePercentage(Category category) {
         double recommended = getRecommendedAmount(category);
         if (recommended == 0) return 0;
         return (getTotalByCategory(category) / recommended) * 100;
+    }
+
+    public double getUsagePercentage(Category category, int month, int year) {
+        double recommended = getRecommendedAmount(category);
+        if (recommended == 0) return 0;
+        return (getTotalByCategory(category, month, year) / recommended) * 100;
     }
 }

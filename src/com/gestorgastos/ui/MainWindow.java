@@ -16,6 +16,11 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -24,7 +29,11 @@ public class MainWindow extends JFrame {
     private DataManager dataManager;
     private JTextField incomeField;
     
-    // Novas referências de painéis e componentes modernos
+    
+    private JComboBox<String> periodFilterCombo;
+    private int selectedMonth = 0; 
+    private int selectedYear = 0;  
+    
     private MetricCard incomeMetricCard;
     private MetricCard expensesMetricCard;
     private MetricCard remainingMetricCard;
@@ -242,6 +251,47 @@ public class MainWindow extends JFrame {
         container.setOpaque(false);
 
         
+        JPanel filterRowPanel = new JPanel(new BorderLayout(10, 0));
+        filterRowPanel.setOpaque(false);
+
+        JLabel selectMonthLabel = new JLabel("Histórico Mensal / Filtro por Período:");
+        selectMonthLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        selectMonthLabel.setForeground(COLOR_TEXT_PRIMARY);
+
+        periodFilterCombo = new JComboBox<>();
+        periodFilterCombo.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        periodFilterCombo.setPreferredSize(new Dimension(180, 32));
+        periodFilterCombo.setBackground(COLOR_CARD_BG);
+        populatePeriodFilter();
+        
+        periodFilterCombo.addActionListener(e -> {
+            String selected = (String) periodFilterCombo.getSelectedItem();
+            if (selected == null || selected.equals("Todos os meses")) {
+                selectedMonth = 0;
+                selectedYear = 0;
+            } else {
+                try {
+                    String[] parts = selected.split("/");
+                    selectedMonth = Integer.parseInt(parts[0]);
+                    selectedYear = Integer.parseInt(parts[1]);
+                } catch (Exception ex) {
+                    selectedMonth = 0;
+                    selectedYear = 0;
+                }
+            }
+            updateUI();
+        });
+
+        JPanel rightSelectorPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        rightSelectorPanel.setOpaque(false);
+        rightSelectorPanel.add(selectMonthLabel);
+        rightSelectorPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        rightSelectorPanel.add(periodFilterCombo);
+
+        filterRowPanel.add(rightSelectorPanel, BorderLayout.EAST);
+        container.add(filterRowPanel, BorderLayout.NORTH);
+
+        
         JPanel cardsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
         cardsPanel.setOpaque(false);
 
@@ -287,6 +337,56 @@ public class MainWindow extends JFrame {
 
         container.add(cardsPanel, BorderLayout.CENTER);
         return container;
+    }
+
+    private void populatePeriodFilter() {
+        if (periodFilterCombo == null) return;
+        
+        String previousSelection = (String) periodFilterCombo.getSelectedItem();
+        periodFilterCombo.removeAllItems();
+        periodFilterCombo.addItem("Todos os meses");
+
+        Set<String> periods = new HashSet<>();
+        
+        for (Expense expense : budgetManager.getExpenses()) {
+            LocalDate date = expense.getDate();
+            String period = String.format("%02d/%d", date.getMonthValue(), date.getYear());
+            periods.add(period);
+        }
+
+        
+        LocalDate now = LocalDate.now();
+        String currentPeriod = String.format("%02d/%d", now.getMonthValue(), now.getYear());
+        periods.add(currentPeriod);
+
+        List<String> sortedPeriods = new ArrayList<>(periods);
+        Collections.sort(sortedPeriods, (p1, p2) -> {
+            try {
+                String[] parts1 = p1.split("/");
+                String[] parts2 = p2.split("/");
+                int m1 = Integer.parseInt(parts1[0]);
+                int y1 = Integer.parseInt(parts1[1]);
+                int m2 = Integer.parseInt(parts2[0]);
+                int y2 = Integer.parseInt(parts2[1]);
+                if (y1 != y2) {
+                    return Integer.compare(y2, y1); 
+                }
+                return Integer.compare(m2, m1); 
+            } catch (Exception e) {
+                return p1.compareTo(p2);
+            }
+        });
+
+        for (String period : sortedPeriods) {
+            periodFilterCombo.addItem(period);
+        }
+
+        if (previousSelection != null) {
+            periodFilterCombo.setSelectedItem(previousSelection);
+        } else {
+            
+            periodFilterCombo.setSelectedItem(currentPeriod);
+        }
     }
 
     private JPanel createCenterPanel() {
@@ -559,6 +659,16 @@ public class MainWindow extends JFrame {
 
                 Expense expense = new Expense(description, amount, category, date);
                 budgetManager.addExpense(expense);
+                
+                
+                populatePeriodFilter();
+                
+                
+                String newPeriod = String.format("%02d/%d", date.getMonthValue(), date.getYear());
+                periodFilterCombo.setSelectedItem(newPeriod);
+                selectedMonth = date.getMonthValue();
+                selectedYear = date.getYear();
+
                 updateUI();
                 dataManager.saveData(budgetManager);
                 dialog.dispose();
@@ -589,8 +699,17 @@ public class MainWindow extends JFrame {
 
         int confirm = JOptionPane.showConfirmDialog(this, "Tem certeza que deseja remover este gasto?", "Confirmacao", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            Expense expense = budgetManager.getExpenses().get(selectedRow);
+            
+            List<Expense> filtered = (selectedMonth == 0 && selectedYear == 0) 
+                ? budgetManager.getExpenses() 
+                : budgetManager.getExpensesByMonth(selectedMonth, selectedYear);
+                
+            Expense expense = filtered.get(selectedRow);
             budgetManager.removeExpense(expense);
+            
+            
+            populatePeriodFilter();
+            
             updateUI();
             dataManager.saveData(budgetManager);
         }
@@ -606,11 +725,11 @@ public class MainWindow extends JFrame {
             incomeMetricCard.setValue(String.format("R$ %.2f", monthlyIncome));
         }
         if (expensesMetricCard != null) {
-            double totalExpenses = budgetManager.getTotalExpenses();
+            double totalExpenses = budgetManager.getTotalExpenses(selectedMonth, selectedYear);
             expensesMetricCard.setValue(String.format("R$ %.2f", totalExpenses));
         }
         if (remainingMetricCard != null) {
-            double totalRemaining = budgetManager.getTotalRemaining();
+            double totalRemaining = budgetManager.getTotalRemaining(selectedMonth, selectedYear);
             remainingMetricCard.setValue(String.format("R$ %.2f", totalRemaining));
             if (totalRemaining < 0) {
                 remainingMetricCard.setIndicatorColor(COLOR_OVER_BUDGET);
@@ -624,16 +743,16 @@ public class MainWindow extends JFrame {
         Category[] categories = Category.values();
         for (int i = 0; i < categories.length; i++) {
             Category category = categories[i];
-            double spent = budgetManager.getTotalByCategory(category);
+            double spent = budgetManager.getTotalByCategory(category, selectedMonth, selectedYear);
             double recommended = budgetManager.getRecommendedAmount(category);
-            double percentage = budgetManager.getUsagePercentage(category);
+            double percentage = budgetManager.getUsagePercentage(category, selectedMonth, selectedYear);
 
             categoryAmountLabels[i].setText(String.format("R$ %.2f / R$ %.2f", spent, recommended));
             categoryProgressBars[i].setValue((int) Math.min(percentage, 100));
             categoryProgressBars[i].setString(String.format("%.1f%%", percentage));
 
             Color barColor;
-            if (budgetManager.isOverBudget(category)) {
+            if (budgetManager.isOverBudget(category, selectedMonth, selectedYear)) {
                 barColor = COLOR_OVER_BUDGET;
             } else {
                 switch (category) {
@@ -654,7 +773,11 @@ public class MainWindow extends JFrame {
         }
 
         tableModel.setRowCount(0);
-        for (Expense expense : budgetManager.getExpenses()) {
+        List<Expense> expensesList = (selectedMonth == 0 && selectedYear == 0) 
+            ? budgetManager.getExpenses() 
+            : budgetManager.getExpensesByMonth(selectedMonth, selectedYear);
+            
+        for (Expense expense : expensesList) {
             tableModel.addRow(new Object[]{
                 expense.getDescription(),
                 String.format("R$ %.2f", expense.getAmount()),
