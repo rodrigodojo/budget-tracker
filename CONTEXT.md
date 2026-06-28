@@ -39,15 +39,15 @@ GestorGastos/
 - **30%** - Gastos Não Essenciais (lazer, entretenimento, compras)
 - **20%** - Investimento (poupança, investimentos)
 
-### 2. Interface Gráfica (Swing)
+### 2. Interface Gráfica (Swing Moderno / Estilo Tailwind)
 - Campo para definir renda mensal
-- Resumo financeiro (renda, gastos, restante)
-- 3 painéis de categoria com barras de progresso coloridas:
+- Resumo financeiro flat em formato de Cards (renda, gastos, restante)
+- 3 painéis de categoria com barras de progresso modernas:
   - Verde: < 80% do orçamento
   - Laranja: 80-100% do orçamento
   - Vermelho: > 100% do orçamento
-- Tabela de gastos registrados
-- Botões para adicionar/remover gastos
+- Tabela de gastos registrados estilizada de maneira responsiva
+- Botões para adicionar/remover gastos com efeitos transicionais flutuantes (Hover)
 
 ### 3. Persistência de Dados
 - Salvamento automático em arquivo texto
@@ -55,10 +55,23 @@ GestorGastos/
 - Formato simples: renda na primeira linha, gastos nas linhas seguintes
 - Formato de gasto: `Descrição|Valor|Categoria|Data`
 
-### 4. Correções Aplicadas
-- Texto dos botões mudado de branco para preto (legibilidade)
-- Remoção de caracteres especiais (acentos) para evitar problemas de encoding
-- Compilação com UTF-8
+### 4. Correções Aplicadas e Estilos de Design
+- Visual sofisticado Flat baseado em Tailwind CSS (Slate, Indigo, Amber, Emerald, Rose)
+- Tipografia moderna e uniforme com Segoe UI em toda a aplicação
+- Diálogo Sobre sofisticado com redirecionamento de autoria ao desenvolvedor rodrigodojo
+
+### 5. Barra de Menu Superior Estilizada e Saída Graciosa
+- Barra de menu com design minimalista flat e animações em hover (fundo e texto)
+- Item de menu que executa o fluxo completo de salvamento inteligente antes do encerramento
+- Prevenção de fechamento desordenado através de WindowAdapter e JFrame.DO_NOTHING_ON_CLOSE
+
+### 6. Histórico de Gastos Mês a Mês Re-arquitetado
+- Separação lógica de orçamentos e despesas mês a mês mantendo completa retrocompatibilidade
+- Menu superior de seleção dinâmica "Histórico de Meses" gerado a partir das datas das despesas reais cadastradas
+- Exibição visível em cabeçalho do período ativo ("Período Ativo: MM/AAAA" ou "Período Ativo: Todos os meses") para rastreabilidade
+
+### 7. Inicialização Maximizado Nativo
+- Janela principal configurada para inicialização direta com `setExtendedState(JFrame.MAXIMIZED_BOTH)` para que sempre inicie maximizado nativamente.
 
 ## Comandos Importantes
 
@@ -140,4 +153,4 @@ git push
 
 ---
 **Última atualização:** 28/06/2026
-**Status:** Projeto completo e funcional
+**Status:** Projeto completo, moderno, maximizado por padrão e filtrável mês a mês.
