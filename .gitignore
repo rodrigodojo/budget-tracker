@@ -5,3 +5,4 @@ bin/
 *.iml
 out/
 target/
+gestor_gastos_data.txt

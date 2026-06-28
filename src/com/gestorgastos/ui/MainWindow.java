@@ -1,14 +1,18 @@
 package com.gestorgastos.ui;
 
 import com.gestorgastos.model.*;
+import com.gestorgastos.persistence.DataManager;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class MainWindow extends JFrame {
     private BudgetManager budgetManager;
+    private DataManager dataManager;
     private JTextField incomeField;
     private JLabel totalIncomeLabel;
     private JLabel totalExpensesLabel;
@@ -20,15 +24,24 @@ public class MainWindow extends JFrame {
     private JLabel[] categoryAmountLabels;
 
     public MainWindow() {
-        budgetManager = new BudgetManager(0);
+        dataManager = new DataManager();
+        budgetManager = dataManager.loadData();
         initializeUI();
+        updateUI();
     }
 
     private void initializeUI() {
         setTitle("Gestor de Gastos - Regra 50/30/20");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
         setSize(900, 700);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                saveAndExit();
+            }
+        });
 
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -205,9 +218,15 @@ public class MainWindow extends JFrame {
             }
             budgetManager.setMonthlyIncome(income);
             updateUI();
+            dataManager.saveData(budgetManager);
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Por favor, insira um valor valido!", "Erro", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void saveAndExit() {
+        dataManager.saveData(budgetManager);
+        System.exit(0);
     }
 
     private void showAddExpenseDialog() {
@@ -258,6 +277,7 @@ public class MainWindow extends JFrame {
                 Expense expense = new Expense(description, amount, category, date);
                 budgetManager.addExpense(expense);
                 updateUI();
+                dataManager.saveData(budgetManager);
                 dialog.dispose();
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(dialog, "Valor invalido!", "Erro", JOptionPane.ERROR_MESSAGE);
@@ -286,11 +306,17 @@ public class MainWindow extends JFrame {
             Expense expense = budgetManager.getExpenses().get(selectedRow);
             budgetManager.removeExpense(expense);
             updateUI();
+            dataManager.saveData(budgetManager);
         }
     }
 
     private void updateUI() {
-        totalIncomeLabel.setText(String.format("Renda: R$ %.2f", budgetManager.getMonthlyIncome()));
+        double monthlyIncome = budgetManager.getMonthlyIncome();
+        if (monthlyIncome > 0 && incomeField != null) {
+            incomeField.setText(String.format("%.2f", monthlyIncome));
+        }
+        
+        totalIncomeLabel.setText(String.format("Renda: R$ %.2f", monthlyIncome));
         totalExpensesLabel.setText(String.format("Gastos: R$ %.2f", budgetManager.getTotalExpenses()));
         totalRemainingLabel.setText(String.format("Restante: R$ %.2f", budgetManager.getTotalRemaining()));
 
